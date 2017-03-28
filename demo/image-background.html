@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>cropit</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="Huploadify.css"/>
+    <script src="../dist/jquery.min.js"></script>
+    <script src="../dist/jquery.cropit.js"></script>
+ 
+    <script type="text/javascript" src="jquery.Huploadify.js"></script>
+    <script type="text/javascript" src="../src/jquery.Huploadify-2.1.2.js"></script>
+
+    <style>
+      .cropit-preview {
+        background-color: #f8f8f8;
+        background-size: cover;
+        border: 5px solid #ccc;
+        border-radius: 3px;
+        margin-top: 7px;
+        width: 250px;
+        height: 250px;
+      }
+      
+      .cropit-preview-image-container {
+        cursor: move;
+      }
+
+      .cropit-preview-background {
+        opacity: .2;
+        cursor: auto;
+      }
+
+      .image-size-label {
+        margin-top: 10px;
+      }
+
+      input, .export {
+        /* Use relative position to prevent from being covered by image background */
+        position: relative;
+        z-index: 10;
+        display: block;
+      }
+
+      button {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+
+
+    <div class="image-editor">
+
+      <input type="file" class="cropit-image-input">
+      <div class="cropit-preview"></div>
+      <div class="image-size-label">
+        Resize image
+      </div>
+      <input type="range" class="cropit-image-zoom-input">
+      <button class="rotate-ccw">Rotate counterclockwise</button>
+      <button class="rotate-cw">Rotate clockwise</button>
+
+      <button class="export">Export</button>
+    </div>
+
+    <script>
+      $(function() {
+        $('.image-editor').cropit({
+          freeMove:false,
+          exportZoom: 1,
+          imageBackground: true,
+          imageBackgroundBorderWidth: 0,
+          imageState: {
+            src: 'http://scottcheng.github.io/cropit/images/2-960.jpg',
+          },
+        });
+        var rotationalp = 90;
+        var reg = 0;
+        var angu = 0;
+
+        $('.rotate-cw').click(function() {
+          angu = reg+=rotationalp;
+          if(angu == 360 ){
+            angu = 0;
+            reg = 0;
+          }
+          //console.log(angu)
+          $('.image-editor').cropit('rotateCW');
+
+         
+        });
+        $('.rotate-ccw').click(function() {
+          $('.image-editor').cropit('rotateCCW');
+          angu = reg -= rotationalp;
+          if(angu == -360 ){
+            angu = 0;
+            reg = 0;
+          }
+         // console.log(angu)
+        });
+
+      $('.export').click(function(){
+        var imageData = $('.image-editor').cropit('export');
+        //选择图片
+        var myImg = document.querySelector(".cropit-preview-image");
+        var matrix = window.getComputedStyle(myImg).transform;
+        //var abc =   $('.cropit-preview-image').css("transform");
+        //框的宽度
+        var kuangWidth = $('.cropit-preview-background-container').width();
+        var kuangHeight = $('.cropit-preview-background-container').height();
+        //var add = document.querySelector(".cropit-preview-image").style.height;
+       //var matrix = window.getComputedStyle(myImg).transform.translateX;
+       //var rotationa = $('.image-editor').cropit('rotates');
+        var aa = $('.image-editor').cropit('rotates', myImg.action);
+        var angule = document.querySelector(".cropit-preview-image").style.transform;
+        var arr = matrix.replace(/[^0-9\-\.,]/g,'').split(',')
+      //var deg = getmatrix(arr[0],arr[1],arr[2],arr[3],arr[4],arr[5])
+      //X轴方向的偏移量
+        var deviationX = Number(arr[4]);
+        //Y轴偏移量
+        var deviationY = Number(arr[5]);
+        //定义要判断的字符串
+        var str = angule;
+        //定义正则表达式对象，\表示转义字符,原点表示任意字符，+表示出现次数至少1次，igm表示忽略大小写，且全局匹配
+        pattern =new RegExp("\\((.| )+?\\)","igm");
+        //取出匹配正则表达式的内容
+        var newStr = str.match(pattern);
+        //缩放比例
+        var scale = Number(newStr[1].replace(/\(/,"").replace(/\)/,""))
+        //旋转角度
+        var rotat = Number(newStr[2].replace(/\(/,"").replace(/\)/,"").replace("deg",""));
+        //判断偏移量第一次的没有偏移的时候如果不是number是NaN的时候手动赋值0
+        if(isNaN(deviationX)){
+          deviationX = 0;
+        }if(isNaN(deviationY)){
+          deviationY = 0;
+        }
+       if(deviationX == kuangWidth){
+          deviationX = 0;
+       }if(deviationY == kuangHeight){
+          deviationY = 0;
+       }
+
+        //alert(kuangWidth/scale*120)
+        //原图中的偏移量X
+        var nowdeviationX = Number(Math.abs(deviationX)/scale).toFixed(2);
+        //原图中的偏移量Y
+        var nowdeviationY = Number(Math.abs(deviationY)/scale).toFixed(2);
+        //当图片旋转90时
+        if(rotat == 90 && nowdeviationX > 0){
+          nowdeviationX = Number(myImg.height - Math.abs(deviationX)/scale).toFixed(2);
+          
+        }
+        //当图片旋转180时
+        if(rotat == 180 && nowdeviationX > 0){
+          nowdeviationX = Number(myImg.width - Math.abs(deviationX)/scale).toFixed(2);
+         
+        }if(rotat == 180 && nowdeviationY > 0){
+           nowdeviationY = Number(myImg.height - Math.abs(deviationY)/scale).toFixed(2);
+         
+        }
+        //当图片旋转270时
+        if(rotat == 270 && nowdeviationY > 0){
+          nowdeviationY =Number(Math.abs(myImg.width - Math.abs(deviationY)/scale)).toFixed(2);
+        }
+        //需要截取的宽度
+        var nowWidth = Number(kuangWidth/scale).toFixed(2);
+        //需要截取的高度度
+        var nwHeight = Number(kuangHeight/scale).toFixed(2);
+/*
+          $.ajax({
+               type: "POST",
+               url: "http://10.1.1.158:8080/artron-build/service/pdf/creator.do?format=json&modelId=1&x=12&y=23&width=200&height=400&rotate=0&scale=0.2",
+               data: "name=garfield&age=18",
+               success: function(data){
+                       
+                }
+            });*/
+
+
+         alert("偏移量：(X:"+nowdeviationX+'),(Y:'+nowdeviationY+')'+'裁切尺寸'+'宽（'+nowWidth+'）'+'高（'+nwHeight+')'+'旋转角度'+rotat)
+      /*  alert('缩放比例：'+scale+'旋转角度:'+rotat+'X轴方向的偏移量:'+deviationX+'Y轴偏移量:'+deviationY+'原图宽度:'+myImg.width+'原图高度:'+myImg.height+'////');*/
+        /*  window.open(imageData)*/
+          console.log(angule);
+          console.log(typeof  angule);
+         // console.log(add)
+          console.log(angu)
+          console.log(matrix)
+          console.log(myImg.width+'////'+myImg.height)
+          console.log(kuangWidth+'////////////'+kuangHeight)
+        });
+
+         function getmatrix(a,b,c,d,e,f){  
+            var aa=Math.round(180*Math.asin(a)/ Math.PI);  
+            var bb=Math.round(180*Math.acos(b)/ Math.PI);  
+            var cc=Math.round(180*Math.asin(c)/ Math.PI);  
+            var dd=Math.round(180*Math.acos(d)/ Math.PI);  
+            var deg=0;  
+            if(aa==bb||-aa==bb){  
+                deg=dd;  
+            }else if(-aa+bb==180){  
+                deg=180+cc;  
+            }else if(aa+bb==180){  
+                deg=360-cc||360-dd;  
+            }  
+            return deg>=360?0:deg;  
+            //return (aa+','+bb+','+cc+','+dd);  
+        }  
+      });
+    </script>
+  </body>
+</html>
